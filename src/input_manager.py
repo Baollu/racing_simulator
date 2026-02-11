@@ -299,6 +299,13 @@ def create_input_manager(
     if mode == "keyboard":
         return KeyboardInputManager(smoothing=smoothing)
     elif mode == "controller":
+        try:
+            import pygame  # noqa: F401
+        except ImportError:
+            print("Error: pygame is required for controller support.")
+            print("Install it with: pip install pygame")
+            print("(requires SDL2 dev libraries: sudo apt install libsdl2-dev)")
+            raise SystemExit(1)
         return ControllerInputManager(smoothing=smoothing, **kwargs)
     else:
         raise ValueError(f"Unknown input mode: {mode}. Use 'keyboard' or 'controller'.")

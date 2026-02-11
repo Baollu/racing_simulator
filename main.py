@@ -82,6 +82,9 @@ def cmd_collect(args):
         sim_path=sim_path,
         base_port=args.port,
         time_scale=args.time_scale,
+        width=args.width,
+        height=args.height,
+        fullscreen=args.fullscreen,
     )
 
     collector = DataCollector(data_dir=args.data_dir)
@@ -195,6 +198,9 @@ def cmd_drive(args):
             base_port=args.port,
             time_scale=args.time_scale,
             max_steps=args.max_steps,
+            width=args.width,
+            height=args.height,
+            fullscreen=args.fullscreen,
         )
     else:
         from src.drive import run_ai_driver
@@ -207,6 +213,9 @@ def cmd_drive(args):
             base_port=args.port,
             time_scale=args.time_scale,
             max_steps=args.max_steps,
+            width=args.width,
+            height=args.height,
+            fullscreen=args.fullscreen,
         )
 
 
@@ -273,6 +282,18 @@ def main():
         type=float,
         default=1.0,
         help="Simulation time scale (default: 1.0)",
+    )
+    p_collect.add_argument(
+        "--width", type=int, default=0,
+        help="Window width in pixels (default: 80%% of screen)",
+    )
+    p_collect.add_argument(
+        "--height", type=int, default=0,
+        help="Window height in pixels (default: 80%% of screen)",
+    )
+    p_collect.add_argument(
+        "--fullscreen", action="store_true",
+        help="Launch simulator in fullscreen mode",
     )
     p_collect.set_defaults(func=cmd_collect)
 
@@ -344,6 +365,18 @@ def main():
         "--onnx",
         action="store_true",
         help="Use ONNX runtime instead of PyTorch",
+    )
+    p_drive.add_argument(
+        "--width", type=int, default=0,
+        help="Window width in pixels (default: 80%% of screen)",
+    )
+    p_drive.add_argument(
+        "--height", type=int, default=0,
+        help="Window height in pixels (default: 80%% of screen)",
+    )
+    p_drive.add_argument(
+        "--fullscreen", action="store_true",
+        help="Launch simulator in fullscreen mode",
     )
     p_drive.set_defaults(func=cmd_drive)
 

@@ -23,6 +23,9 @@ def run_ai_driver(
     base_port: int = 5004,
     time_scale: float = 1.0,
     max_steps: int = 0,
+    width: int = 0,
+    height: int = 0,
+    fullscreen: bool = False,
 ):
     """
     Run the AI driver in the simulator.
@@ -35,6 +38,9 @@ def run_ai_driver(
         base_port: Communication port.
         time_scale: Simulation speed.
         max_steps: Maximum steps to run (0 = unlimited).
+        width: Window width (0 = auto).
+        height: Window height (0 = auto).
+        fullscreen: Fullscreen mode.
     """
     # Load model
     device = "cpu"  # CPU for real-time inference (lower latency)
@@ -60,6 +66,9 @@ def run_ai_driver(
         sim_path=sim_path,
         base_port=base_port,
         time_scale=time_scale,
+        width=width,
+        height=height,
+        fullscreen=fullscreen,
     )
 
     try:
@@ -140,6 +149,9 @@ def run_ai_driver_with_onnx(
     base_port: int = 5004,
     time_scale: float = 1.0,
     max_steps: int = 0,
+    width: int = 0,
+    height: int = 0,
+    fullscreen: bool = False,
 ):
     """
     Run the AI driver using an ONNX model (for Jetson Nano deployment testing).
@@ -152,6 +164,9 @@ def run_ai_driver_with_onnx(
         base_port: Communication port.
         time_scale: Simulation speed.
         max_steps: Maximum steps to run (0 = unlimited).
+        width: Window width (0 = auto).
+        height: Window height (0 = auto).
+        fullscreen: Fullscreen mode.
     """
     import onnxruntime as ort
 
@@ -177,6 +192,9 @@ def run_ai_driver_with_onnx(
         sim_path=sim_path,
         base_port=base_port,
         time_scale=time_scale,
+        width=width,
+        height=height,
+        fullscreen=fullscreen,
     )
 
     try:
