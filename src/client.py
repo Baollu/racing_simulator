@@ -27,6 +27,9 @@ class SimClient:
         worker_id: int = 0,
         no_graphics: bool = False,
         time_scale: float = 1.0,
+        width: int = 0,
+        height: int = 0,
+        fullscreen: bool = False,
     ):
         """
         Initialize the simulation client.
@@ -39,6 +42,9 @@ class SimClient:
             worker_id: Worker ID offset from base_port.
             no_graphics: If True, run simulator without graphics.
             time_scale: Simulation time scale (1.0 = real-time).
+            width: Window width in pixels (0 = auto-detect from screen).
+            height: Window height in pixels (0 = auto-detect from screen).
+            fullscreen: If True, launch in fullscreen mode.
         """
         self.config_path = os.path.abspath(config_path)
         self.sim_path = sim_path
@@ -46,17 +52,55 @@ class SimClient:
         self.worker_id = worker_id
         self.no_graphics = no_graphics
         self.time_scale = time_scale
+        self.width = width
+        self.height = height
+        self.fullscreen = fullscreen
 
         self._env = None
         self._engine_channel = None
         self._behavior_names = []
         self._behavior_specs = {}
 
+    @staticmethod
+    def detect_screen_resolution() -> tuple:
+        """Auto-detect screen resolution. Returns (width, height)."""
+        try:
+            import subprocess
+            output = subprocess.check_output(
+                ["xrandr", "--query"], text=True, stderr=subprocess.DEVNULL
+            )
+            for line in output.splitlines():
+                if "*" in line:
+                    # e.g. "   1920x1080     60.00*+"
+                    res = line.split()[0]
+                    w, h = res.split("x")
+                    return int(w), int(h)
+        except Exception:
+            pass
+        # Fallback
+        return 1280, 720
+
     def connect(self):
         """Connect to the Unity simulation."""
         self._engine_channel = EngineConfigurationChannel()
 
-        additional_args = ["--config-path", self.config_path]
+        # Resolve screen resolution
+        width, height = self.width, self.height
+        if width == 0 or height == 0:
+            screen_w, screen_h = self.detect_screen_resolution()
+            # Use 80% of screen size for a comfortable windowed mode
+            width = width or int(screen_w * 0.8)
+            height = height or int(screen_h * 0.8)
+
+        additional_args = [
+            "--config-path", self.config_path,
+            "-screen-width", str(width),
+            "-screen-height", str(height),
+            "-screen-fullscreen", "1" if self.fullscreen else "0",
+        ]
+
+        print(f"Launching simulator: {width}x{height}"
+              f"{' fullscreen' if self.fullscreen else ' windowed'}")
 
         self._env = UnityEnvironment(
             file_name=self.sim_path,
@@ -68,6 +112,8 @@ class SimClient:
         )
 
         self._engine_channel.set_configuration_parameters(
+            width=width,
+            height=height,
             time_scale=self.time_scale,
         )
 
