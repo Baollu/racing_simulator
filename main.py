@@ -1,6 +1,9 @@
 """
 Racing Simulator AI - Main Entry Point
 
+Simulator binary auto-detected at:
+    RacingSimulatorLinux/BuildLinux/RacingSimulator.x86_64
+
 Commands:
     collect  - Drive manually and collect training data
     eda      - Run exploratory data analysis on collected data
@@ -9,14 +12,47 @@ Commands:
     config   - Validate agent configuration file
 
 Usage:
-    python main.py collect --config config/agents_config.json
-    python main.py eda --data-dir data/
-    python main.py train --data-dir data/
-    python main.py drive --config config/agents_config.json --model models/best_model.pth
+    python main.py collect                          # auto-detects simulator
+    python main.py collect --track circuit1         # name the track
+    python main.py collect --input controller       # use gamepad
+    python main.py eda                              # analyze collected data
+    python main.py train                            # train model
+    python main.py drive                            # AI drives
 """
 
 import argparse
+import os
 import sys
+
+# Auto-detect simulator binary relative to project root
+SIM_DEFAULT_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "RacingSimulatorLinux", "BuildLinux", "RacingSimulator.x86_64",
+)
+
+
+def find_sim_path(user_path: str = None) -> str:
+    """Resolve simulator binary path."""
+    if user_path:
+        path = user_path
+    elif os.path.isfile(SIM_DEFAULT_PATH):
+        path = SIM_DEFAULT_PATH
+    else:
+        print("Error: Simulator binary not found.")
+        print(f"  Looked at: {SIM_DEFAULT_PATH}")
+        print("  Use --sim-path to specify the path manually.")
+        sys.exit(1)
+
+    if not os.path.isfile(path):
+        print(f"Error: Simulator binary not found at: {path}")
+        sys.exit(1)
+
+    # Ensure executable permission
+    if not os.access(path, os.X_OK):
+        print(f"Setting executable permission on {path}")
+        os.chmod(path, os.stat(path).st_mode | 0o755)
+
+    return os.path.abspath(path)
 
 
 def cmd_collect(args):
@@ -36,10 +72,14 @@ def cmd_collect(args):
         smoothing=args.smoothing,
     )
 
+    # Resolve simulator path
+    sim_path = find_sim_path(args.sim_path)
+    print(f"Simulator: {sim_path}")
+
     # Create client
     client = SimClient(
         config_path=args.config,
-        sim_path=args.sim_path,
+        sim_path=sim_path,
         base_port=args.port,
         time_scale=args.time_scale,
     )
@@ -142,6 +182,8 @@ def cmd_train(args):
 
 def cmd_drive(args):
     """Run the AI driver."""
+    sim_path = find_sim_path(args.sim_path)
+
     if args.onnx:
         from src.drive import run_ai_driver_with_onnx
 
@@ -149,7 +191,7 @@ def cmd_drive(args):
             config_path=args.config,
             onnx_path=args.model,
             model_dir=args.model_dir,
-            sim_path=args.sim_path,
+            sim_path=sim_path,
             base_port=args.port,
             time_scale=args.time_scale,
             max_steps=args.max_steps,
@@ -161,7 +203,7 @@ def cmd_drive(args):
             config_path=args.config,
             model_path=args.model,
             model_dir=args.model_dir,
-            sim_path=args.sim_path,
+            sim_path=sim_path,
             base_port=args.port,
             time_scale=args.time_scale,
             max_steps=args.max_steps,
@@ -203,7 +245,7 @@ def main():
     p_collect.add_argument(
         "--sim-path",
         default=None,
-        help="Path to RacingSimulator binary (default: connect to running instance)",
+        help="Path to RacingSimulator binary (default: auto-detect in RacingSimulatorLinux/)",
     )
     p_collect.add_argument(
         "--port", type=int, default=5004, help="Communication port (default: 5004)"
@@ -287,7 +329,7 @@ def main():
     p_drive.add_argument(
         "--sim-path",
         default=None,
-        help="Path to RacingSimulator binary",
+        help="Path to RacingSimulator binary (default: auto-detect)",
     )
     p_drive.add_argument(
         "--port", type=int, default=5004, help="Communication port"
