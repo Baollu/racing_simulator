@@ -1,0 +1,11 @@
+{
+    "learning_rate": 0.001,
+    "batch_size": 64,
+    "epochs": 100,
+    "hidden_sizes": [64, 32],
+    "dropout": 0.1,
+    "validation_split": 0.2,
+    "early_stopping_patience": 10,
+    "scheduler_step_size": 30,
+    "scheduler_gamma": 0.5
+}
