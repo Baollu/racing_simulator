@@ -30,8 +30,7 @@ SIM_DEFAULT_PATH = os.path.join(
     "RacingSimulatorLinux", "BuildLinux", "RacingSimulator.x86_64",
 )
 
-
-def find_sim_path(user_path: str = None) -> str:
+def find_simulator_path(user_path: str = None) -> str:
     """Resolve simulator binary path."""
     if user_path:
         path = user_path
@@ -39,8 +38,6 @@ def find_sim_path(user_path: str = None) -> str:
         path = SIM_DEFAULT_PATH
     else:
         print("Error: Simulator binary not found.")
-        print(f"  Looked at: {SIM_DEFAULT_PATH}")
-        print("  Use --sim-path to specify the path manually.")
         sys.exit(1)
 
     if not os.path.isfile(path):
@@ -73,7 +70,7 @@ def cmd_collect(args):
     )
 
     # Resolve simulator path
-    sim_path = find_sim_path(args.sim_path)
+    sim_path = find_simulator_path(args.sim_path)
     print(f"Simulator: {sim_path}")
 
     # Create client
@@ -185,7 +182,7 @@ def cmd_train(args):
 
 def cmd_drive(args):
     """Run the AI driver."""
-    sim_path = find_sim_path(args.sim_path)
+    sim_path = find_simulator_path(args.sim_path)
 
     if args.onnx:
         from src.drive import run_ai_driver_with_onnx
