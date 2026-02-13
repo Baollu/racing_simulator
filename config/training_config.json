@@ -1,11 +1,13 @@
 {
-    "learning_rate": 0.001,
+    "learning_rate": 0.0005,
     "batch_size": 64,
-    "epochs": 100,
-    "hidden_sizes": [64, 32],
-    "dropout": 0.1,
+    "epochs": 200,
+    "hidden_sizes": [128, 64, 32],
+    "dropout": 0.15,
     "validation_split": 0.2,
-    "early_stopping_patience": 10,
-    "scheduler_step_size": 30,
-    "scheduler_gamma": 0.5
+    "early_stopping_patience": 20,
+    "scheduler_step_size": 40,
+    "scheduler_gamma": 0.5,
+    "augment_mirror": true,
+    "augment_noise_std": 0.02
 }

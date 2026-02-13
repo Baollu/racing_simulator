@@ -21,6 +21,42 @@ from .data_collector import load_dataset
 from .model import DrivingModel
 
 
+def augment_dataset(observations, actions, active_obs_count, mirror=True, noise_std=0.0):
+    """
+    Augment driving data to improve generalization on tight turns.
+
+    Args:
+        observations: Observation array (N, obs_size).
+        actions: Action array (N, action_size) where col 0 = steering, col 1 = throttle.
+        active_obs_count: Number of active raycast sensors (remaining are padding).
+        mirror: If True, add left/right mirrored samples (flip sensors + invert steering).
+        noise_std: Standard deviation of Gaussian noise to add to observations.
+
+    Returns:
+        Augmented (observations, actions) arrays.
+    """
+    aug_obs_list = [observations]
+    aug_act_list = [actions]
+
+    if mirror:
+        # Mirror: reverse the active sensor order and negate steering
+        mirrored_obs = observations.copy()
+        mirrored_obs[:, :active_obs_count] = mirrored_obs[:, :active_obs_count][:, ::-1]
+        mirrored_actions = actions.copy()
+        mirrored_actions[:, 0] = -mirrored_actions[:, 0]  # Invert steering
+        aug_obs_list.append(mirrored_obs)
+        aug_act_list.append(mirrored_actions)
+
+    observations = np.concatenate(aug_obs_list, axis=0)
+    actions = np.concatenate(aug_act_list, axis=0)
+
+    if noise_std > 0:
+        noise = np.random.normal(0, noise_std, size=observations[:, :active_obs_count].shape)
+        observations[:, :active_obs_count] = observations[:, :active_obs_count] + noise.astype(np.float32)
+
+    return observations, actions
+
+
 def train_model(
     data_dir: str,
     config_path: str = "config/training_config.json",
@@ -49,6 +85,8 @@ def train_model(
     patience = config.get("early_stopping_patience", 10)
     sched_step = config.get("scheduler_step_size", 30)
     sched_gamma = config.get("scheduler_gamma", 0.5)
+    augment_mirror = config.get("augment_mirror", False)
+    augment_noise_std = config.get("augment_noise_std", 0.0)
 
     # Device
     if device == "auto":
@@ -63,6 +101,24 @@ def train_model(
 
     print(f"  Observations: {observations.shape}")
     print(f"  Actions: {actions.shape}")
+
+    # Data augmentation
+    if augment_mirror or augment_noise_std > 0:
+        # Detect active sensors (those with std > 1, i.e. not constant padding)
+        stds = observations.std(axis=0)
+        active_obs_count = int(np.sum(stds > 1.0))
+        if active_obs_count == 0:
+            active_obs_count = observations.shape[1]
+        print(f"\nData augmentation (active sensors: {active_obs_count}):")
+        if augment_mirror:
+            print(f"  Mirror: enabled (doubles dataset, balances left/right turns)")
+        if augment_noise_std > 0:
+            print(f"  Noise: std={augment_noise_std}")
+        observations, actions = augment_dataset(
+            observations, actions, active_obs_count,
+            mirror=augment_mirror, noise_std=augment_noise_std,
+        )
+        print(f"  Augmented dataset: {observations.shape[0]} samples")
 
     # Normalize observations
     obs_mean = observations.mean(axis=0)
